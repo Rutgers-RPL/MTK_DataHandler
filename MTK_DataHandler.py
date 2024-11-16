@@ -1,6 +1,7 @@
 import zipfile
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 class FlightDataHandler:
 
@@ -25,14 +26,25 @@ class FlightDataHandler:
     def update_launch_data(self, launch_date):
         self.launch_date = launch_date
     
-    def from_np(self,file_path,launch_date = None, board_version = None, packet_data= True):
+
+
+    def from_np(self, file_path, launch_date=None, board_version=None, packet_data=True):
+ 
+        # Check if the file exists
+        if not os.path.isfile(file_path):
+            raise FileNotFoundError(f"Error: The file '{file_path}' does not exist.")
+        
         self.launch_date = launch_date if launch_date is not None else print("Warning. No launch date provided.")
         self.board_version = board_version if board_version is not None else print("Warning. No board version provided.")
-        if packet_data:
-            self.packet_data = np.load(file_path)
-        else:
-            self.state_data = np.load(file_path)
-    
+        try:
+            # Load packet or state data from the .npy file
+            if packet_data:
+                self.packet_data = np.load(file_path)
+            else:
+                self.state_data = np.load(file_path)
+        except Exception as e:
+            raise IOError(f"Error loading data from file '{file_path}': {e}")
+        
 
 
     def from_zip(self, file_path, launch_date=None, board_version=None, csv=False):
