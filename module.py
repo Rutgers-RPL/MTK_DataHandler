@@ -11,7 +11,7 @@ class FlightDataHandler:
         self.packet_data = None
         self.state_data = None
         self.config = None
-        self.state_data_dict = None
+        self.state_activations = {}
 
         self.state_column_to_index = {'magic':0, 'state_flags':1, 'arming_time':2, 
                                       'apogee_time':3, 'drogue_time': 4, 'main_time': 5, 
@@ -58,16 +58,21 @@ class FlightDataHandler:
 
     def find_stages(self):
 
-        #populates state_data_dict with column_name value pairings
+        #populates state_activations with column_name value pairings
 
         if self.state_data is None:
             print("No state data loaded.")
             return
 
-        self.state_data_dict = {}
+        for stage, col in self.state_column_to_index.items():
+            column = self.state_data[:, col]
+            activation = np.where(np.diff(column)==1)[0]
+            if len(activation) > 0:
+                self.state_activations[stage] = activation[0] + 1  
+            else:
+                self.state_activations[stage] = None
+                
 
-        for column_name, index in self.state_column_to_index.items():
-            self.state_data_dict[column_name] = self.state_data[1, index]
 
     
     def plot_column_with_stages(self, column_name, title = None, start = None, end = None):
@@ -85,19 +90,22 @@ class FlightDataHandler:
 
         colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k', '#FF5733']
 
-        if not self.state_data_dict:
+        if not self.state_activations:
             print("No state data loaded.")
             return
 
-        for i, (stage_name, stage_time) in enumerate(self.state_data_dict.items()):
-            color = colors[i % len(colors)]  
-            plt.axvline(x=stage_time, color=color, linestyle='--', label=stage_name)
+        for i, (stage_name, stage_time) in enumerate(self.state_activations.items()):
+            if start <= stage_time < end: 
+                color = colors[i % len(colors)]  
+                plt.axvline(x=stage_time, color=color, linestyle='--', label=stage_name)
         
 
         self.packet_data[index].plot(kind='line', title=title or f"{column_name} over Time")
         plt.xlabel("Index")
         plt.ylabel(column_name)
         plt.show()
+
+
 
     def display_metadata(self):
         print(f"Launch Date: {self.launch_date}")
