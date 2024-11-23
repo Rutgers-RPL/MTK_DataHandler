@@ -14,9 +14,9 @@ class FlightDataHandler:
 
         self.state_activations = {}
 
-        self.state_column_to_index = {'magic':0, 'state_flags':1, 'arming_time':2, 
-                                      'apogee_time':3, 'drogue_time': 4, 'main_time': 5, 
-                                      'sus_time':6}
+        self.state_column_to_index = {'arming_time':2, 
+                                      'apogee_time':7, 'drogue_time': 8, 'main_time': 9, 
+                                      'sus_time':10}
         
 
         self.config = None
@@ -131,6 +131,7 @@ class FlightDataHandler:
 
     def find_stages(self):
 
+
         #populates state_activations with column_name value pairings
 
         if self.state_data is None:
@@ -139,12 +140,15 @@ class FlightDataHandler:
 
         for stage, col in self.state_column_to_index.items():
             column = self.state_data[:, col]
-            activation = np.where(np.diff(column)==1)[0]
+            column = (column > 0.5).astype(int) 
+            activation = np.where(np.diff(column) ==1)[0]
             if len(activation) > 0:
-                self.state_activations[stage] = activation[0] + 1  
+                self.state_activations[stage] = activation[0]
             else:
                 self.state_activations[stage] = None
-                
+
+            print(stage, activation[0])
+            
 
     
     def plot_column_with_states(self, column_name, title=None, start=None, end=None):
